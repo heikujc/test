@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>Leaflet Web Map</title>
+
+<!-- reference to Leaflet CSS -->
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+
+<!-- reference to Leaflet JavaScript -->
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+<!-- set width and height styles for map -->
+<style>
+#map {
+    width: 1100px;
+    height:800px;
+}
+* {
+  box-sizing: border-box;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 25px;
+  background: #D3D3D3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 25px;
+  height: 25px;
+  background: #FF0000;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 25px;
+  background: #FF0000;
+  cursor: pointer;
+}
+
+.sliderticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.sliderticks p {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  width: 1px;
+  background: #D3D3D3;
+  height: 10px;
+  line-height: 40px;
+  margin: 0 0 20px 0;
+}
+</style>
+
+</head>
+
+<body>
+
+	<table>
+	<tr>
+	<th>
+	<!-- place holder for map -->
+    <div id="map"></div>
+	</th>
+	<th center width="300">
+	Select the type of image to display:
+	<div class="range" >
+		<input type="range" min="1" max="3" value="1" class="slider" step="1" oninput="showVal2(this.value)" onchange="showVal2(this.value)">
+		<div class="sliderticks">
+		<p>PHR</p>
+		<p>Spot</p>
+	</div>
+	</div>
+	<span id="valBox"></span>
+	<br>
+
+
+	</div>
+	</th>
+	</tr>
+	</table>
+    
+	
+	
+
+<script>
+	heatcolor = ['#ffffff','#ffeab5','#ffd283','#ffb94b','#ff9d21','#ff7b56','#ff4d7c','#ff0000','#f00000','#000000','#000000']
+	sensorcolor=['#008000','#006f00','#a40123','#8b0000'];
+
+    // create map object, tell it to live in 'map' div and give initial latitude, longitude, zoom values
+    // pass option to turn scroll wheel zoom off
+    var map = L.map('map',{scrollWheelZoom:true}).setView([0, 0], 2);
+
+    // add base map tiles from OpenStreetMap and attribution info to 'map' div
+    L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+	
+    var latlngs;
+	var hm;
+	var layers1=L.layerGroup();
+	var layers2=L.layerGroup();
+	var layers3=L.layerGroup();
+
+ readTextFile("polygone.txt",'polygones');
+ readTextFile("heatmap.txt",'heatmap');
+ 
+ drawmap(0);
+
+ function readTextFile(file,output)
+{
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function ()
+    {
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                var allText = rawFile.responseText;
+                if (output=='polygones') {
+					latlngs= JSON.parse(allText);
+				}
+				if (output=='heatmap') {
+					hm= JSON.parse(allText);
+				}
+			}
+        }
+    }
+    rawFile.send(null);
+}
+
+
+function drawmap(sensor){
+	
+	
+	
+	
+	var i;
+	for (i = 0; i < latlngs.length; i++)
+	{
+		if ((hm[i][0]!=0)&&(hm[i][0]<100))
+		{	
+			layers1.addLayer (L.polygon(latlngs[i], {color: heatcolor[Math.round(hm[i][0]/4)], stroke:true,weight:1,interactive:false,className:''+i+'#'+hm[i][0]+'#'+latlngs[i]}));
+		}
+		if ((hm[i][1]!=0)&&(hm[i][1]<100))
+		{	
+			layers2.addLayer (L.polygon(latlngs[i], {color: heatcolor[Math.round(hm[i][1]/4)], stroke:true,weight:1,interactive:false,className:''+i+'#'+hm[i][1]+'#'+latlngs[i]}));
+
+		}
+		if ((hm[i][2]!=0)&&(hm[i][2]<100))
+		{	
+			layers3.addLayer (L.polygon(latlngs[i], {color: heatcolor[Math.round(hm[i][2]/4)], stroke:true,weight:1,interactive:false,className:''+i+'#'+hm[2][1]+'#'+latlngs[i]}));
+
+		}
+		//spotlayer = L.polygon(latlngs[i], { stroke:false,weight:1,fillOpacity:0.01,interactive:false,className:''+i+'#'+latlngs[i]}).addTo(map);
+		//heatcolor[hm[i][0]/10]
+		
+		if ((hm[i][0]>=100))
+		{
+			layers1.addLayer(L.polygon(latlngs[i], {color: '#000000',fillOpacity: hm[i][0]/300, stroke:true,weight:1,interactive:false,className:''+i+'#'+hm[i][0]+'#'+latlngs[i]}));
+		}
+		if ((hm[i][1]>=100))
+		{
+			layers2.addLayer(L.polygon(latlngs[i], {color: '#000000',fillOpacity: hm[i][1]/300, stroke:true,weight:1,interactive:false,className:''+i+'#'+hm[i][1]+'#'+latlngs[i]}));
+		}
+	}
+	
+	map.addLayer(layers1);
+ }
+ 
+function showVal2(newVal){
+  if (newVal==1)
+  {
+  map.removeLayer(layers2);
+  map.removeLayer(layers3);
+  map.addLayer(layers1);
+  }
+  if (newVal==2)
+  {
+    
+  map.removeLayer(layers1);
+  map.removeLayer(layers3);
+  map.addLayer(layers2);
+  }
+  if (newVal==3)
+  {
+    
+  map.removeLayer(layers1);
+  map.removeLayer(layers2);
+  map.addLayer(layers3);
+  }
+  
+  
+}
+
+</script>
+
+</body>
+
+</html>
